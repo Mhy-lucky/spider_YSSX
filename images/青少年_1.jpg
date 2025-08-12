@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Error>
+  <Code>NoSuchKey</Code>
+  <Message>The specified key does not exist.</Message>
+  <RequestId>689AB707FC44B13038FBD5D2</RequestId>
+  <HostId>gd-hbimg.oss-cn-hangzhou.aliyuncs.com</HostId>
+  <Key>small/23f5460bace28507df86bd0149d01e3f8bc36e1385e5b-n9TlKh_fw750</Key>
+  <EC>0026-00000001</EC>
+  <RecommendDoc>https://api.aliyun.com/troubleshoot?q=0026-00000001</RecommendDoc>
+</Error>
