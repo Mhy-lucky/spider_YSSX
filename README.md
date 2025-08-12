@@ -5,7 +5,11 @@
 ### 爬取缩略图：找到<img标签即可，不用跳转（8-12成果） 没有水印但是不清晰
 ### class_selector:a.xxxx class_name:xxxx
 
-### 一个完整的 GitHub 工作流程，确保你可以：
+
+
+
+## ps
+## 一个完整的 GitHub 工作流程，确保你可以：
 
 1. **维护自己的代码仓库**（存放项目）
 2. **写日志文档**（比如 `README.md`、开发日志）
@@ -14,9 +18,9 @@
 
 ---
 
-## **第一步：准备工作**
+### **第一步：准备工作**
 
-### 1. 安装 Git
+#### 1. 安装 Git
 
 * **Mac**（推荐直接用系统自带的 Git）：
 
@@ -26,17 +30,17 @@
 
   如果没安装，会提示安装，点 **Install** 就好。
 
-### 2. 注册 / 登录 GitHub
+#### 2. 注册 / 登录 GitHub
 
 * [GitHub 官网](https://github.com) 注册账号（你已经有了：`Mhy-lucky`）。
 
 ---
 
-## **第二步：生成并配置 PAT（Personal Access Token）**
+### **第二步：生成并配置 PAT（Personal Access Token）**
 
 因为 GitHub 取消了直接用密码推送代码，所以必须用 **PAT**。
 
-### 1. 生成 PAT
+#### 1. 生成 PAT
 
 1. 登录 GitHub → 点击右上角头像 → **Settings**
 2. 左侧找到 **Developer settings**
@@ -51,16 +55,16 @@
 
 ---
 
-## **第三步：在本地配置 Git**
+### **第三步：在本地配置 Git**
 
-### 1. 设置全局用户名和邮箱（必须和 GitHub 对应）
+#### 1. 设置全局用户名和邮箱（必须和 GitHub 对应）
 
 ```bash
 git config --global user.name "Mhy-lucky"
 git config --global user.email "你的GitHub邮箱"
 ```
 
-### 2. 删除旧的远程仓库绑定（你之前的关联可能有问题）
+#### 2. 删除旧的远程仓库绑定（你之前的关联可能有问题）
 
 进入你的项目文件夹：
 
@@ -71,7 +75,7 @@ git remote remove origin
 
 ---
 
-## **第四步：创建 GitHub 仓库**
+### **第四步：创建 GitHub 仓库**
 
 1. 登录 GitHub → 点击右上角 **+** → **New repository**
 2. 填：
@@ -86,7 +90,7 @@ git remote remove origin
 
 ---
 
-## **第五步：关联本地项目到新仓库**
+### **第五步：关联本地项目到新仓库**
 
 假设你项目文件夹是 `/Users/admin/spider_YSSX`
 
@@ -102,7 +106,7 @@ git remote add origin https://github.com/Mhy-lucky/spider_YSSX.git
 
 ---
 
-## **第六步：第一次提交并推送**
+### **第六步：第一次提交并推送**
 
 ```bash
 # 添加所有文件
@@ -131,9 +135,9 @@ Password for 'https://Mhy-lucky@github.com':
 
 ---
 
-## **第七步：写日志文档**
+### **第七步：写日志文档**
 
-### 1. 使用 README.md 记录说明
+#### 1. 使用 README.md 记录说明
 
 在项目根目录新建文件：
 
@@ -152,7 +156,7 @@ touch README.md
 - 2025-08-13: 完善数据抓取模块
 ```
 
-### 2. 提交日志更新
+#### 2. 提交日志更新
 
 ```bash
 git add README.md
@@ -162,7 +166,7 @@ git push
 
 ---
 
-## **第八步：常用 Git 操作**
+### **第八步：常用 Git 操作**
 
 | 功能       | 命令                   |
 | -------- | -------------------- |
@@ -175,7 +179,7 @@ git push
 
 ---
 
-## **第九步：避免 PAT 每次都要输入**
+### **第九步：避免 PAT 每次都要输入**
 
 如果不想每次输入用户名 + PAT，可以让 Git 记住：
 
