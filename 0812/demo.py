@@ -1,7 +1,7 @@
 import json
 import time
-import os
 import logging
+import requests
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
@@ -12,7 +12,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("demo_log.log", encoding='utf-8'),
+        logging.FileHandler("web_log.log", encoding='utf-8'),
         logging.StreamHandler()
     ]
 )
@@ -26,11 +26,12 @@ chrome_options.add_argument("--no-sandbox")
 driver = webdriver.Chrome()
 
 # 读取JSON关键词，只取前10个
-with open('/Users/admin/爬虫实习/0811/keywords.json', 'r', encoding='utf-8') as file:
-    keywords= json.load(file)[:10]
+with open('/Users/admin/Desktop/爬虫实习/0811/keywords.json', 'r', encoding='utf-8') as file:
+    keywords = json.load(file)
 
-output_file = "image_urls_demo.txt"
+output_file = "image_urls.txt"
 
+# 用于保存图片URL
 def save_urls(keyword, urls):
     with open(output_file, 'a', encoding='utf-8') as f:
         for url in urls:
@@ -38,7 +39,10 @@ def save_urls(keyword, urls):
 
 def crawl_urls(keyword, max_images=20):
     logging.info(f"开始爬取关键词：{keyword}，目标图片数量：{max_images}")
-    driver.get(f"https://huaban.com/search/?q={keyword}")
+
+    # 构建包含筛选条件的 URL
+    search_url = f"https://huaban.com/search?q={keyword}&sort=all&type=material&filter_ids=material_category-5342726.5342727%3Amaterial_category%3A%E9%AB%98%E7%AB%AF%E5%85%8D%E6%8A%A0&original={keyword}"
+    driver.get(search_url)
     time.sleep(3)
 
     # 滚动加载更多图片
