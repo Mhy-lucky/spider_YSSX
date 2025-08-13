@@ -4,14 +4,14 @@
 ___
 ## All from myself：
 ___
-1. **要爬取原图**：
+1. 要爬取原图：
    需要先找到<a标签（而不是<div标签）一般就表示这张图片本身了，然后find_elements即可找到页面上的所有图片，再跳转到具体的详情页面<img标签，find_element,下载(8-11成果), 一般会带有水印
 <img width="1194" height="495" alt="截屏2025-08-12 19 21 40" src="https://github.com/user-attachments/assets/a5ad4c38-8743-4d45-a19e-3bb393195168" />
 
-2. **爬取缩略图**：
+2. 爬取缩略图：
    找到<img标签即可，不用跳转（8-12成果,没有水印但是不清晰
 
-3. **区别**: class_selector:a.xxxx class_name:xxxx
+3. 区别: class_selector:a.xxxx class_name:xxxx
 
 
 
@@ -203,10 +203,10 @@ git config --global credential.helper store
 
 ---
 ### **第十步：日常操作： 已经建立并且关联好远程仓库之后，后续需要上传新的文件或者之前的文件内容有修改时：**
-#### 1. git pull origin main --rebase   # 先拉取远程最新代码
-#### 2. git add .                       # 添加修改
-#### 3. git commit -m "更新说明"         # 提交修改
-#### 4. git push origin main            # 推送到远程
+1. git pull origin main --rebase   # 先拉取远程最新代码
+2. git add .                       # 添加修改
+3. git commit -m "更新说明"         # 提交修改
+4. git push origin main            # 推送到远程
 ___
 
 ### 团队协作
@@ -236,7 +236,7 @@ ___
    ```
 
 4. **保持功能分支更新**
-   每隔几天或每次开发前，从主分支拉最新合并进功能分支，避免冲突：
+   每次开发前，从主分支拉最新合并进功能分支，避免冲突：
 
    ```bash
    git checkout main
