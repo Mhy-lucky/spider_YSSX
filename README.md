@@ -9,10 +9,10 @@
 #### class_selector:a.xxxx class_name:xxxx
 
 #### 已经建立并且关联好远程仓库之后，后续需要上传新的文件或者之前的文件内容有修改时：
-**git pull origin main --rebase   # 先拉取远程最新代码**
-**git add .                       # 添加修改**
-**git commit -m "更新说明"         # 提交修改**
-**git push origin main            # 推送到远程**
+1. **git pull origin main --rebase   # 先拉取远程最新代码**
+2. **git add .                       # 添加修改**
+3. **git commit -m "更新说明"         # 提交修改**
+4. **git push origin main            # 推送到远程**
 
 
 
