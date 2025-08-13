@@ -17,7 +17,7 @@ else
 fi
 
 # 推送到远程仓库
-git push
+git push -u origin main
 
 
 
