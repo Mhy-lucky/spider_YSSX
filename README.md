@@ -1,19 +1,22 @@
 # spider_YSSX
 云上曲率公司爬虫实习
 ## All from myself：
-#### 1. 要爬取原图：需要先找到<a标签（而不是<div标签）一般就表示这张图片本身了，然后find_elements即可找到页面上的所有图片，再跳转到具体的详情页面<img标签，find_element,下载(8-11成果) 一般会带有水印
+1. **要爬取原图**：
+   需要先找到<a标签（而不是<div标签）一般就表示这张图片本身了，然后find_elements即可找到页面上的所有图片，再跳转到具体的详情页面<img标签，find_element,下载(8-11成果), 一般会带有水印
 <img width="1194" height="495" alt="截屏2025-08-12 19 21 40" src="https://github.com/user-attachments/assets/a5ad4c38-8743-4d45-a19e-3bb393195168" />
 
-#### 2. 爬取缩略图：找到<img标签即可，不用跳转（8-12成果） 没有水印但是不清晰
+2. **爬取缩略图**：
+   找到<img标签即可，不用跳转（8-12成果,没有水印但是不清晰
 
-#### 3. class_selector:a.xxxx class_name:xxxx
-
-
-
+3. **区别**class_selector:a.xxxx class_name:xxxx
 
 
 
+
+
+___
 ## GitHub学习成果
+___
 ### 个人
 一个完整的 GitHub 工作流程，确保你可以：
 
