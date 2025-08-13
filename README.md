@@ -8,18 +8,14 @@
 
 #### 3. class_selector:a.xxxx class_name:xxxx
 
-#### 4. 已经建立并且关联好远程仓库之后，后续需要上传新的文件或者之前的文件内容有修改时：
-1. **git pull origin main --rebase   # 先拉取远程最新代码**
-2. **git add .                       # 添加修改**
-3. **git commit -m "更新说明"         # 提交修改**
-4. **git push origin main            # 推送到远程**
 
 
 
 
 
-
-## ps:一个完整的 GitHub 工作流程，确保你可以
+## GitHub学习成果
+### 个人
+一个完整的 GitHub 工作流程，确保你可以：
 
 1. **维护自己的代码仓库**（存放项目）
 2. **写日志文档**（比如 `README.md`、开发日志）
@@ -74,7 +70,7 @@ git config --global user.name "Mhy-lucky"
 git config --global user.email "你的GitHub邮箱"
 ```
 
-#### 2. 删除旧的远程仓库绑定（你之前的关联可能有问题）
+#### 2. 删除旧的远程仓库绑定（如果之前有绑定过）
 
 进入你的项目文件夹：
 
@@ -200,5 +196,91 @@ git config --global credential.helper store
 然后下一次输入后就会保存到本地。
 
 ---
+### **第十步：日常操作： 已经建立并且关联好远程仓库之后，后续需要上传新的文件或者之前的文件内容有修改时：**
+#### 1. git pull origin main --rebase   # 先拉取远程最新代码
+#### 2. git add .                       # 添加修改
+#### 3. git commit -m "更新说明"         # 提交修改
+#### 4. git push origin main            # 推送到远程
+___
+
+### 团队协作
+---
+
+#### 团队Git协作超简洁小贴士
+
+1. **克隆仓库**
+   每个人先从远程仓库复制代码到本地：
+   `git clone <仓库地址>`
+
+2. **创建功能分支**
+   切换主分支拉最新，建一个专属功能分支：
+
+   ```bash
+   git checkout main
+   git pull origin main
+   git checkout -b feature/你的功能名
+   ```
+
+3. **日常开发和提交**
+   在自己的功能分支写代码，分批提交：
+
+   ```bash
+   git add .
+   git commit -m "简洁明了的改动说明"
+   ```
+
+4. **保持功能分支更新**
+   每隔几天或每次开发前，从主分支拉最新合并进功能分支，避免冲突：
+
+   ```bash
+   git checkout main
+   git pull origin main
+   git checkout feature/你的功能名
+   git merge main  # 或 git rebase main
+   ```
+
+5. **推送功能分支**
+   把本地功能分支代码推送到远程仓库：
+   `git push origin feature/你的功能名`
+
+6. **发起Pull Request（PR）**
+   在GitHub网页端，从功能分支请求合并到主分支，等待团队审核。
+
+7. **代码审核与修改**
+   审核人提出建议后，继续在功能分支修改并推送更新。
+
+8. **合并代码**
+   审核通过，合并功能分支到主分支，完成后删除功能分支。
+
+9. **更新本地主分支**
+   合并后，大家都拉取最新主分支代码继续开发：
+
+   ```bash
+   git checkout main
+   git pull origin main
+   ```
+
+10. **冲突解决**
+    出现冲突时，手动修改冲突文件，保存后：
+
+    ```bash
+    git add 冲突文件
+    git rebase --continue  # 或 git commit
+    ```
+
+---
+
+##### 额外小贴士
+
+* 提交信息写清楚，方便别人理解。
+* 不直接在主分支开发，保护主分支稳定。
+* 功能完成再合并，避免主分支出现不稳定代码。
+* 代码规范团队约定，保持一致。
+* 定期清理不需要的分支，保持仓库整洁。
+
+---
+
+
+
 
 
