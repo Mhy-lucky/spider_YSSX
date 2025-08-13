@@ -5,6 +5,7 @@ import requests
 import logging
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 
 # 配置日志
@@ -19,30 +20,27 @@ logging.basicConfig(
 
 # 设置Chrome无头模式
 chrome_options = Options()
-chrome_options.add_argument("--headless")
+chrome_options.add_argument("--headless")  # 无头模式
 chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--no-sandbox")
 
-driver = webdriver.Chrome(options=chrome_options)
+driver = webdriver.Chrome()
 
 # 读取JSON关键词
-with open('/Users/admin/Desktop/爬虫实习/0811/keywords.json', 'r', encoding='utf-8') as file:
+with open('/Users/admin/爬虫实习/0811/keywords.json', 'r', encoding='utf-8') as file:
     keywords = json.load(file)
 
 if not os.path.exists('images'):
     os.makedirs('images')
 
-# 图片URL保存文件
-url_file_path = "image_urls.txt"
-with open(url_file_path, 'w', encoding='utf-8') as f:
-    f.write("")  # 清空文件
+
 
 def search_and_download_images(keyword, max_images=20):
     logging.info(f"开始爬取关键词：{keyword}，目标图片数量：{max_images}")
     driver.get(f"https://huaban.com/search/?q={keyword}")
-    time.sleep(3)
+    time.sleep(3)  # 等待加载
     
-    # 滚动页面加载更多图片
+    # 尽量滚动页面，加载更多图片
     scroll_pause_time = 2
     last_height = driver.execute_script("return document.body.scrollHeight")
     
@@ -73,9 +71,6 @@ def search_and_download_images(keyword, max_images=20):
             img_data = requests.get(img_url, timeout=10).content
             with open(img_name, 'wb') as f:
                 f.write(img_data)
-            # 保存到 URL 文件
-            with open(url_file_path, 'a', encoding='utf-8') as f:
-                f.write(f"{keyword}\t{img_url}\n")
             logging.info(f"成功下载图片 {downloaded_count+1} ：{img_url}")
             downloaded_count += 1
         except Exception as e:
@@ -87,4 +82,3 @@ for kw in keywords:
     search_and_download_images(kw, max_images=20)
 
 driver.quit()
-logging.info(f"爬取完成，所有图片URL已保存到 {url_file_path}，图片下载到 images 文件夹。")
