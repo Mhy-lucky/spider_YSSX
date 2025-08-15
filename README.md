@@ -409,50 +409,8 @@ while time.time() - start_time < 10:
 ---
 
 ### 7️⃣ 完整流程图
-
-网页加载
-   │
-   ▼
-检查目标元素是否唯一？ ──否──> 找父容器 / 限定范围，再在范围内定位
-   │
-   是
-   │
-   ▼
-选择定位方式
-   ├─ ID（唯一且稳定） → 定位成功？
-   ├─ Class / CSS / XPath → 定位成功？
-   ├─ 标签 + 属性 / 文本内容 → 定位成功？
-   │
-   ▼
-显式等待元素状态
-   ├─ 可见 (visibility) → 元素显示在页面上
-   ├─ 可点击 (clickable) → 元素可执行点击操作
-   ├─ 存在 (presence) → 元素已加载到 DOM
-   │
-   ▼
-操作元素
-   ├─ 按钮(Button) 
-   │      ├─ click()
-   │      └─ 必要时滚动到元素可视区域
-   ├─ 输入框(Input / TextArea) 
-   │      ├─ clear()
-   │      └─ send_keys(文本)
-   ├─ 图片(Image) 
-   │      └─ get_attribute('src') 或 alt 属性
-   ├─ 下拉菜单(Select) 
-   │      ├─ click() 打开菜单
-   │      └─ click() 选择目标选项
-   │
-   ▼
-检查操作结果 / 文本变化（动态页面）
-   ├─ 文本/下拉是否生效？
-   ├─ 动态内容是否更新？
-   ├─ 是否触发安全验证？
-       ├─ 是 → 提示人工完成 / 循环检测直到成功
-       └─ 否 → 获取最终结果
-   │
-   ▼
-完成
+<img width="774" height="486" alt="截屏2025-08-15 17 53 11" src="https://github.com/user-attachments/assets/6dcc5a1d-3f6d-42f0-9451-997797f9fbe2" />
+<img width="771" height="560" alt="截屏2025-08-15 17 53 34" src="https://github.com/user-attachments/assets/ec7b8ede-2573-46da-a8ea-a285ec0ac3ed" />
 
 ---
 
