@@ -602,9 +602,12 @@ conda activate myenv
 * 不需要管理员权限
 * 可直接后台运行脚本
 
-#####  ps:已经新建好了环境，每次需要从服务器进入环境时：
-source ~/miniconda3/bin/activate
-conda activate myenv
+#####  ps:
+1.已经新建好了环境，每次需要从服务器进入环境时：
+* source ~/miniconda3/bin/activate
+* conda activate myenv
+2.已经上传到服务器上的文件、文件夹，文件内容/文件夹内容在本地有改动的同步方法：
+* 在本地终端输入rsync -avz --progress "/Users/admin/Desktop/爬虫实习/0814/" h29:/home/maohongyao/0814/
 
 ---
 
