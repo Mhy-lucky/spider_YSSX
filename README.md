@@ -602,6 +602,10 @@ conda activate myenv
 * 不需要管理员权限
 * 可直接后台运行脚本
 
+#####  ps:已经新建好了环境，每次需要从服务器进入环境时：
+source ~/miniconda3/bin/activate
+conda activate myenv
+
 ---
 
 
