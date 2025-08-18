@@ -10,14 +10,13 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import TimeoutException
 
 # ---------------- 配置 ----------------
-# 获取当前脚本所在目录
-# BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-# # 构建文件完整路径
-# INPUT_FILE = os.path.join(BASE_DIR, "input.txt")
-INPUT_FILE = "/home/maohongyao/0814/input.txt"
-OUTPUT_FILE = "/home/maohongyao/0814/trans_results.txt"
+
+# INPUT_FILE = "/home/maohongyao/0814/input.txt"
+# OUTPUT_FILE = "/home/maohongyao/0814/trans_results.txt"
+INPUT_FILE = "/Users/admin/Desktop/爬虫实习/0814/input.txt"
+OUTPUT_FILE = "/Users/admin/Desktop/爬虫实习/0814/trans_results.txt"
 CHECK_INTERVAL = 10     # 秒，每隔多少秒检查新内容
-MAX_WORDS = 600         # 每批次最大词数
+MAX_WORDS = 1000        # 每批次最大词数
 MAX_LINES = 10          # 每批次最大条数
 
 # ---------------- 浏览器初始化 ----------------
@@ -112,9 +111,17 @@ def translate_deepl(driver, text, src_lang, tgt_lang, wait_time=30):
 
 # ---------------- 保存函数 ----------------
 def append_to_file(original, translated):
+    # 按行对齐，原文和译文一一对应
+    orig_lines = original.strip().split("\n")
+    trans_lines = translated.strip().split("\n")
+
+    # 防止行数不一致，取最小长度
+    min_len = min(len(orig_lines), len(trans_lines))
+
     with open(OUTPUT_FILE, "a", encoding="utf-8") as f:
-        f.write(original.strip() + "\n\n")
-        f.write(translated.strip() + "\n\n")
+        for i in range(min_len):
+            f.write(orig_lines[i].strip() + "\t" + trans_lines[i].strip() + "\n\n")
+
 
 # ---------------- 无限循环翻译 ----------------
 if __name__ == "__main__":
