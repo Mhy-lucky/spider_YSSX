@@ -11,10 +11,10 @@ from selenium.common.exceptions import TimeoutException
 
 # ---------------- 配置 ----------------
 
-# INPUT_FILE = "/home/maohongyao/0814/input.txt"
-# OUTPUT_FILE = "/home/maohongyao/0814/trans_results.txt"
-INPUT_FILE = "/Users/admin/Desktop/爬虫实习/0814/input.txt"
-OUTPUT_FILE = "/Users/admin/Desktop/爬虫实习/0814/trans_results.txt"
+INPUT_FILE = "/home/maohongyao/0814/input.txt"
+OUTPUT_FILE = "/home/maohongyao/0814/trans_results.txt"
+# INPUT_FILE = "/Users/admin/Desktop/爬虫实习/0814/input.txt"
+# OUTPUT_FILE = "/Users/admin/Desktop/爬虫实习/0814/trans_results.txt"
 CHECK_INTERVAL = 10     # 秒，每隔多少秒检查新内容
 MAX_WORDS = 1000        # 每批次最大词数
 MAX_LINES = 10          # 每批次最大条数
