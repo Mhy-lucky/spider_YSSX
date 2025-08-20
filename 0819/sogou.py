@@ -145,7 +145,7 @@ def main():
     print("🟢 程序启动，开始监控文件并翻译...")
 
     input_file = "/home/maohongyao/pro/code/deepl/input.txt"
-    output_file = "/home/maohongyao/pro/code/sougou/trans.txt"
+    output_file = "/home/maohongyao/pro/code/sougou/sogou_trans.txt"
     # input_file = "/Users/admin/Desktop/爬虫实习/0814/input.txt"
     # output_file = "translation.txt"
 

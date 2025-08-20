@@ -22,6 +22,7 @@ ___
 * ⑥** GPT解决不了问题的时候上CSDN，棒啊！**
 * ⑦对于翻译框等限制字数要求的，看清楚是字符数还是单词数（DeepL）
 * ⑧chrome_options.add_argument("--window-size=1920,1080")  # ✅ 无头模式必加，防止加载不完整
+* ⑨使用引擎URL参数直接选择语言，避免下拉框点击失败。（比如对于谷歌翻译：url = f"https://translate.google.com/?sl=auto&tl={TARGET_LANG}&text={encoded_text}&op=translate"）
 
 5.反爬总结
 * ①安全验证无法跳过，也无法解决（小牛翻译）

@@ -12,7 +12,7 @@ import os
 # OUTPUT_FILE = "trans.txt"
 
 INPUT_FILE =  "/home/maohongyao/pro/code/deepl/input.txt"
-OUTPUT_FILE = "/home/maohongyao/pro/code/deepl/trans.txt"
+OUTPUT_FILE = "/home/maohongyao/pro/code/deepl/deepl_trans.txt"
 
 
 CHECK_INTERVAL = 10     # 秒，每隔多少秒检查新内容
@@ -46,24 +46,36 @@ def init_driver():
     return driver
 
 # ---------------- 选择目标语言 ----------------
+# ---------------- 选择目标语言 ----------------
 def select_target_language(driver, tgt_lang):
     """
     tgt_lang 例子：
     en-US, zh-Hans, zh-Hant, ja, fr, de ...
+    该版本在 Linux headless 服务器下稳定选择目标语言
     """
     try:
-        # 打开语言选择下拉
-        lang_btn = WebDriverWait(driver, 10).until(
-            lambda d: d.find_element(By.CSS_SELECTOR, "button[data-testid='translator-target-lang-btn']")
-        )
-        driver.execute_script("arguments[0].click();", lang_btn)  # ✅ execute_script 点击稳定
+        from selenium.webdriver.support import expected_conditions as EC
+        from selenium.webdriver.common.by import By
+        from selenium.webdriver.support.ui import WebDriverWait
 
-        # 点击指定语言
-        lang_option = WebDriverWait(driver, 10).until(
-            lambda d: d.find_element(By.XPATH, f"//button[@data-testid='translator-lang-option-{tgt_lang}']")
+        # 等待目标语言下拉按钮可点击
+        lang_btn = WebDriverWait(driver, 20).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, "button[data-testid='translator-target-lang-btn']"))
         )
-        driver.execute_script("arguments[0].click();", lang_option)  # ✅ execute_script 点击稳定
+        driver.execute_script("arguments[0].scrollIntoView(true);", lang_btn)
+        driver.execute_script("arguments[0].click();", lang_btn)
+
+        # 等待目标语言选项可点击
+        lang_option = WebDriverWait(driver, 20).until(
+            EC.element_to_be_clickable(
+                (By.XPATH, f"//button[@data-testid='translator-lang-option-{tgt_lang}']")
+            )
+        )
+        driver.execute_script("arguments[0].scrollIntoView(true);", lang_option)
+        driver.execute_script("arguments[0].click();", lang_option)
+
         print(f"🎯 已选择目标语言：{tgt_lang}")
+
     except Exception as e:
         print(f"❌ 选择目标语言失败: {e}")
 
