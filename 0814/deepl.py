@@ -1,17 +1,19 @@
-# -*- coding: utf-8 -*-
-import os
-import time
-import traceback
 from selenium import webdriver
-from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.support import expected_conditions as EC
+import time
+import os
 
 # ---------------- 配置 ----------------
-INPUT_FILE = "/home/maohongyao/pro/code/deepl/input.txt"
+# INPUT_FILE = "/Users/admin/Desktop/爬虫实习/0814/input.txt"
+# OUTPUT_FILE = "trans.txt"
+
+INPUT_FILE =  "/home/maohongyao/pro/code/deepl/input.txt"
 OUTPUT_FILE = "/home/maohongyao/pro/code/deepl/trans.txt"
+
 
 CHECK_INTERVAL = 10     # 秒，每隔多少秒检查新内容
 MAX_CHARS = 1500        # 每批次最大字符数
@@ -45,22 +47,25 @@ def init_driver():
 
 # ---------------- 选择目标语言 ----------------
 def select_target_language(driver, tgt_lang):
+    """
+    tgt_lang 例子：
+    en-US, zh-Hans, zh-Hant, ja, fr, de ...
+    """
     try:
         # 打开语言选择下拉
         lang_btn = WebDriverWait(driver, 10).until(
             lambda d: d.find_element(By.CSS_SELECTOR, "button[data-testid='translator-target-lang-btn']")
         )
-        driver.execute_script("arguments[0].click();", lang_btn)
+        driver.execute_script("arguments[0].click();", lang_btn)  # ✅ execute_script 点击稳定
 
-        # 使用 format 替代 f-string
-        xpath_expr = "//button[@data-testid='translator-lang-option-{tgt_lang}']"
+        # 点击指定语言
         lang_option = WebDriverWait(driver, 10).until(
-            lambda d: d.find_element(By.XPATH, xpath_expr)
+            lambda d: d.find_element(By.XPATH, f"//button[@data-testid='translator-lang-option-{tgt_lang}']")
         )
-        driver.execute_script("arguments[0].click();", lang_option)
-        print("🎯 已选择目标语言：{}".format(tgt_lang))
+        driver.execute_script("arguments[0].click();", lang_option)  # ✅ execute_script 点击稳定
+        print(f"🎯 已选择目标语言：{tgt_lang}")
     except Exception as e:
-        print("❌ 选择目标语言失败: {}".format(e))
+        print(f"❌ 选择目标语言失败: {e}")
 
 # ---------------- 输入输出函数 ----------------
 def set_source_text(driver, text, timeout=15):
@@ -113,10 +118,11 @@ def clear_output(driver):
     except:
         pass
 
-# ---------------- 段落拆分 ----------------
+# ---------------- 段落拆分（单段落超长，按字符数，保持单词完整） ----------------
 def split_long_paragraph_by_chars(paragraph, max_chars):
     words = paragraph.split(" ")
     chunks, current, length = [], [], 0
+
     for w in words:
         if length + len(w) + (1 if current else 0) <= max_chars:
             current.append(w)
@@ -127,6 +133,7 @@ def split_long_paragraph_by_chars(paragraph, max_chars):
             length = len(w)
     if current:
         chunks.append(" ".join(current))
+
     return chunks
 
 # ---------------- 无限循环翻译 ----------------
@@ -136,7 +143,7 @@ if __name__ == "__main__":
 
     processed_lines = set()
     driver = None
-    print("🟢 程序启动，监控 {0}，每批次最多 {1} 字符...".format(INPUT_FILE, MAX_CHARS))
+    print(f"🟢 程序启动，监控 {INPUT_FILE}，每批次最多 {MAX_CHARS} 字符...")
 
     while True:
         try:
@@ -152,8 +159,11 @@ if __name__ == "__main__":
                 time.sleep(CHECK_INTERVAL)
                 continue
 
+            # ---------------- 分批次处理 ----------------
             batch, batch_len = [], 0
+
             for line in new_lines:
+                # 段落本身超过 MAX_CHARS，先拆分
                 if len(line) > MAX_CHARS:
                     chunks = split_long_paragraph_by_chars(line, MAX_CHARS)
                 else:
@@ -161,12 +171,13 @@ if __name__ == "__main__":
 
                 for chunk in chunks:
                     if batch_len + len(chunk) + (1 if batch else 0) > MAX_CHARS:
+                        # 翻译当前批次
                         attempt, translated = 0, None
                         while attempt < 5:
                             try:
                                 if driver is None:
                                     driver = init_driver()
-                                    select_target_language(driver, tgt_lang)
+                                    select_target_language(driver, tgt_lang)  # ✅ 每次新建浏览器先选语言
                                 clear_output(driver)
                                 set_source_text(driver, "\n".join(batch))
                                 translated = get_translated_text(driver)
@@ -187,13 +198,14 @@ if __name__ == "__main__":
                         batch.append(chunk)
                         batch_len += len(chunk) + (1 if batch else 0)
 
+            # 翻译最后一批
             if batch:
                 attempt, translated = 0, None
                 while attempt < 5:
                     try:
                         if driver is None:
                             driver = init_driver()
-                            select_target_language(driver, tgt_lang)
+                            select_target_language(driver, tgt_lang)  # ✅ 每次新建浏览器先选语言
                         clear_output(driver)
                         set_source_text(driver, "\n".join(batch))
                         translated = get_translated_text(driver)
@@ -209,14 +221,14 @@ if __name__ == "__main__":
                 append_to_file("\n".join(batch), translated)
                 processed_lines.update(batch)
 
-            print("✅ 已翻译并追加 {0} 条新内容到 {1}".format(len(new_lines), OUTPUT_FILE))
+            print(f"✅ 已翻译并追加 {len(new_lines)} 条新内容到 {OUTPUT_FILE}")
             time.sleep(CHECK_INTERVAL)
 
         except KeyboardInterrupt:
             print("🛑 程序手动停止")
             break
         except Exception as e:
-            print("❌ 程序出错: {}".format(e))
+            print(f"❌ 程序出错: {e}")
             time.sleep(CHECK_INTERVAL)
 
     if driver:
