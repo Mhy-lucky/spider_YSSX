@@ -186,12 +186,6 @@ sudo apt install -y fonts-liberation libappindicator3-1 libnss3 lsb-release xdg-
 
 # 一键部署脚本示例
 
-保存为 `setup_deepl_env.sh` 并赋予可执行权限：
-
-```bash
-chmod +x setup_deepl_env.sh
-```
-
 ```bash
 #!/bin/bash
 # 一键部署 DeepL Selenium 翻译环境
@@ -297,6 +291,11 @@ echo "===================================="
 ```
 
 ---
+用vscode或其他编辑器保存为 `setup_deepl_env.sh` 并在服务器上赋予可执行权限：
+
+```bash
+chmod +x setup_deepl_env.sh
+```
 
 ### 🔹 使用方法
 
@@ -319,6 +318,7 @@ python deepl_translate.py
 
 ---
 
+
 这个一键部署脚本会自动：
 
 * 判断权限
@@ -327,5 +327,7 @@ python deepl_translate.py
 * 创建 Python 环境并安装 Selenium
 
 ---
-
+# 其他的小tips:
+* 当上传到服务器上的input.txt有更新时，只需要在本地终端刷新一下，服务器上就会继续翻译
+  
 
