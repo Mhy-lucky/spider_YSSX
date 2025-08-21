@@ -329,5 +329,26 @@ python deepl_translate.py
 ---
 # 其他的小tips:
 * 当上传到服务器上的input.txt有更新时，只需要在本地终端刷新一下，服务器上就会继续翻译
-  
+### 1️⃣ 同步整个文件夹
+
+```bash
+rsync -avz --progress "/Users/admin/Desktop/爬虫实习/0814/" h29:/home/maohongyao/pro/code/deepl/
+```
+
+* 末尾 `/` 表示同步 **文件夹下的所有内容**，不包括父目录本身。
+* 会保留权限、时间戳，显示详细进度，压缩传输。
+
+---
+
+### 2️⃣ 同步单个文件
+
+```bash
+rsync -avz --progress "/Users/admin/Desktop/爬虫实习/0814/deepl.py" h29:/home/maohongyao/pro/code/deepl/
+```
+
+* 源路径写到具体文件名。
+* 目标可以是目录（文件会放入该目录）或者指定文件名（会重命名同步到远程）。
+
+---
+
 
