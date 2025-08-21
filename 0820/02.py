@@ -13,10 +13,13 @@ from datetime import datetime
 # ------------------- 用户配置 -------------------
 INPUT_FILE = "/home/maohongyao/pro/code/deepl/input.txt"
 OUTPUT_FILE = "google_trans.txt"
+
 TARGET_LANG = input("请输入目标语言代码（如 'zh-CN'、'en'、'ja' 等）：").strip() or "zh-CN"
-MAX_CHARS = 4000  # 每批最大字符数
-WAIT_TIME = 15    # 页面等待时间
-CHECK_INTERVAL = 5  # 每隔多少秒检查文件是否有新内容
+MAX_CHARS = 4000        # 拆分单行文本的最大字符
+BATCH_MAX_CHARS = 2500  # 每批翻译文本的最大字符
+WAIT_TIME = 15          # 页面等待时间
+CHECK_INTERVAL = 5      # 每隔多少秒检查文件是否有新内容
+RETRIES = 2             # 翻译失败重试次数
 
 # ------------------- 已处理集合 -------------------
 processed_lines = set()
@@ -26,7 +29,7 @@ driver = None
 def init_driver():
     options = Options()
     options.binary_location = "/home/maohongyao/chrome/opt/google/chrome/chrome"
-    options.add_argument("--headless=new")
+    # options.add_argument("--headless=new")
     options.add_argument("--window-size=1920,1080")
     options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
@@ -40,6 +43,7 @@ def init_driver():
     options.add_argument(f"--user-data-dir={tmp_user_data_dir}")
     service = Service("/home/maohongyao/chrome/chromedriver-linux64/chromedriver")
     driver = webdriver.Chrome(service=service, options=options)
+    driver.set_page_load_timeout(180)  # 页面加载超时 180 秒
     return driver
 
 # ------------------- 拆分长段落 -------------------
@@ -59,36 +63,31 @@ def split_long_paragraph_by_chars(paragraph, max_chars):
     return chunks
 
 # ------------------- 批量翻译 -------------------
-def translate_batch(lines):
+def translate_batch(text, retries=RETRIES):
     global driver
     if driver is None:
         driver = init_driver()
-    text_to_translate = "\n".join(lines)
-    encoded_text = urllib.parse.quote(text_to_translate)
+    encoded_text = urllib.parse.quote(text)
     url = f"https://translate.google.com/?sl=auto&tl={TARGET_LANG}&text={encoded_text}&op=translate"
-    driver.get(url)
-    wait = WebDriverWait(driver, WAIT_TIME)
-    try:
-        # Google Translate 批量文本翻译输出在多个 span 中，取第一个翻译块
-        el = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "span[jsname='W297wb']")))
-        translated_text = el.text.strip()
-        # 按换行符对齐原文
-        translated_lines = translated_text.split("\n")
-        # 如果翻译行数不匹配，补空字符串
-        while len(translated_lines) < len(lines):
-            translated_lines.append("")
-        return list(zip(lines, translated_lines))
-    except Exception as e:
-        print(f"⚠️ 批量翻译失败: {e}")
-        # 出现错误时返回原文对应空翻译
-        return [(line, "") for line in lines]
+    for attempt in range(retries + 1):
+        try:
+            driver.get(url)
+            wait = WebDriverWait(driver, WAIT_TIME)
+            els = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "span[jsname='W297wb']")))
+            translated_text = "".join([el.text for el in els]).strip()
+            return translated_text
+        except Exception as e:
+            print(f"⚠️ 批量翻译失败，第 {attempt+1} 次重试: {e}")
+            time.sleep(3)
+    return ""
 
 # ------------------- 保存结果 -------------------
-def append_to_file(pairs):
+def append_to_file_block(original_text, translated_text):
     with open(OUTPUT_FILE, "a", encoding="utf-8") as f:
-        for original, translated in pairs:
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            f.write(f"{timestamp}\t{original}\t{translated}\n")
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        f.write(f"{timestamp}\n")
+        f.write(original_text + "\n")
+        f.write(translated_text + "\n\n")  # 空行分隔
 
 # ------------------- 读取已翻译内容 -------------------
 def load_processed_lines():
@@ -118,25 +117,24 @@ def main():
             new_lines = read_new_lines()
             if new_lines:
                 print(f"检测到 {len(new_lines)} 条新内容，开始翻译...")
-                batch, batch_len = [], 0
+                buffer, length = [], 0
                 for line in new_lines:
                     chunks = split_long_paragraph_by_chars(line, MAX_CHARS) if len(line) > MAX_CHARS else [line]
                     for chunk in chunks:
-                        if batch_len + len(chunk) + 1 > MAX_CHARS:
-                            # 翻译当前批次
-                            translated_pairs = translate_batch(batch)
-                            append_to_file(translated_pairs)
-                            processed_lines.update(batch)
-                            batch = [chunk]
-                            batch_len = len(chunk)
+                        if length + len(chunk) + 1 > BATCH_MAX_CHARS:  
+                            original_text = "\n".join(buffer)
+                            translated_text = translate_batch(original_text)
+                            append_to_file_block(original_text, translated_text)
+                            processed_lines.update(buffer)
+                            buffer, length = [chunk], len(chunk)
                         else:
-                            batch.append(chunk)
-                            batch_len += len(chunk) + 1
-                # 翻译最后一批
-                if batch:
-                    translated_pairs = translate_batch(batch)
-                    append_to_file(translated_pairs)
-                    processed_lines.update(batch)
+                            buffer.append(chunk)
+                            length += len(chunk) + 1
+                if buffer:
+                    original_text = "\n".join(buffer)
+                    translated_text = translate_batch(original_text)
+                    append_to_file_block(original_text, translated_text)
+                    processed_lines.update(buffer)
                 print(f"✅ 已完成 {len(new_lines)} 条内容的翻译")
             time.sleep(CHECK_INTERVAL)
     except KeyboardInterrupt:

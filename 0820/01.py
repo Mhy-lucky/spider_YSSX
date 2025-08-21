@@ -7,8 +7,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 # ------------------- 用户配置 -------------------
-# INPUT_FILE = "/Users/admin/Desktop/爬虫实习/0814/input.txt"
-INPUT_FILE =  "/home/maohongyao/pro/code/deepl/input.txt"
+INPUT_FILE = "/Users/admin/Desktop/爬虫实习/0814/input.txt"
+# INPUT_FILE =  "/home/maohongyao/pro/code/deepl/input.txt"
 OUTPUT_FILE = "google_trans.txt"
 TARGET_LANG = input("请输入目标语言代码（如 'zh-CN'、'en'、'ja' 等）：").strip() or "zh-CN"
 MAX_CHARS = 4000  # 每批最大字符数
