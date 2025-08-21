@@ -185,7 +185,12 @@ sudo apt install -y fonts-liberation libappindicator3-1 libnss3 lsb-release xdg-
 
 
 # 一键部署脚本示例
+用vscode或其他编辑器把下面的脚本保存为 `setup_deepl_env.sh` 并在服务器上赋予可执行权限：
 
+```bash
+chmod +x setup_deepl_env.sh
+```
+___
 ```bash
 #!/bin/bash
 # 一键部署 DeepL Selenium 翻译环境
@@ -291,11 +296,7 @@ echo "===================================="
 ```
 
 ---
-用vscode或其他编辑器保存为 `setup_deepl_env.sh` 并在服务器上赋予可执行权限：
 
-```bash
-chmod +x setup_deepl_env.sh
-```
 
 ### 🔹 使用方法
 
