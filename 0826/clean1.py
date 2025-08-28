@@ -1,193 +1,102 @@
 # -*- coding: utf-8 -*-
 """
-大文件清洗 + 保序去重 + 广告过滤增强
-支持增量清洗，从指定行开始，并持久化哈希
+高效大文件小说清洗（Aho-Corasick 自动机版）
+特点：
+1. 只处理第三列
+2. 删除脏关键词、括号内脏关键词、特殊符号、问号、非中文字符、整句括号
+3. 适合大文件（百GB以上）
+4. 保留原始行写入文件
+5. 屏幕打印进度
 """
 
+import ahocorasick
 import re
-import unicodedata
-from collections import Counter
-import os
 
-# ---------- 配置 ----------
-INPUT_FILE = "/data1/to_hongyao/chinese_web_novel.zh"
-OUTPUT_FILE = "/home/maohongyao/pro/code/clean/data_clean.zh"
-DEFAULT_MAX_LEN = 300
-START_LINE = 2234385126  # 从哪一行开始继续清洗（前面已清洗完的行数 + 1）
-SEEN_FILE = "/data1/to_hongyao/seen_hashes.txt"
+INPUT_FILE = "/data1/to_hongyao/data_clean.zh"
+OUTPUT_FILE = "/data1/to_hongyao/data_clean_cleaned.zh"
+PROGRESS_INTERVAL = 1_000_000  # 每处理100万行打印一次
 
-# ---------- 广告/品牌 ----------
-SITE_BRANDS = [
-    "UU看书", "ＵＵ看书", "uukanshu", "ｕｕｋａｎｓｈｕ",
-    "小说网", "顶点小说", "笔趣阁", "biquge", "ＢＩＱＵＧＥ",
-    "www", "ＷＷＷ", "．com", ".com", "．net", ".net", "ｎｅｔ",
-    "qidian", "jjwxc", "17k", "zongheng", "faloo", "sfacg",
-    "shuqi", "hongxiu", "zhuishushenqi", "ikanshu", "dingdian",
-    "bqg", "kanshuzhong", "piaotian", "69shu", "soxs", "txt", "23us",
-    # 新增中文广告
-    "百度搜索", "白金小说网", "随梦小说网", "新世纪小说网", "无错小说网",
-    "看小说最快更新", "给力文学网"
+# 脏关键词
+DIRTY_KEYWORDS = [
+    "去广告太多？有弹窗？", "界面清新，全站广告", "未完待续", "月票", "票票", "票",
+    "加更", "PS", "敬请关注", "大力支持", "更新", "&", "小说网", "转载", "版权",
+    "免费阅读", "访问", "下载", "新书", "书友", "书荒", "多多支持", "收藏", "发表",
+    "贴吧", "评论", "瓶颈", "打赏", "断更", "亲们", "剧情", "补更", "详见拙作",
+    "启航", "书迷", "本人", "一更", "二更", "三更", "四更", "章", "和谐", "群",
+    "红包", "金牌", "首发", "河蟹", "友情提示", "小说", "补充", "英语翻译", "休息",
+    "写", "更", "电脑", "（）", "码", "发布", "办公室", "老张", "注", "作者",
+    "域名", "网", "书评","点击","榜","上榜","推荐","免费","最新","书城","观众","水字数"
 ]
 
-NON_CONTENT_KEYWORDS = [
-    "版权", "目录", "声明", "本书", "作者简介", "封面", "序言", "推荐序", "出版", "ISBN",
-    "书名", "责任编辑", "手机阅读", "无弹窗", "最新章节", "收藏本站", "求推荐票", "打赏",
-    "感谢订阅", "下载", "阅读网", "起点", "晋江", "飞卢", "书友", "加更", "求月票",
-    "上一章", "下一章", "返回书页", "加入书签", "求收藏"
-]
+# 括号内脏关键词
+BRACKET_KEYWORDS = ["广告", "更新", "电脑", "系统", "软件", "来源", "网址", "小说", "版权"]
 
 # ---------- 正则 ----------
-RE_CHINESE = re.compile(r'[\u4e00-\u9fff]')
-RE_HTML = re.compile(r'<[^>]+>')
-RE_URL = re.compile(r'(http[s]?://|www\.)', re.I)
-RE_EMAIL = re.compile(r'\b[\w\.-]+@[\w\.-]+\.\w+\b')
-RE_PHONE_QQ = re.compile(r'\b\d{5,11}\b')
-RE_CHAPTER = re.compile(r'^第[\s零一二三四五六七八九十百千0-9]{1,10}[章节卷回]')
-RE_ALL_PUNCT = re.compile(r'^[\s，。、“”‘’：；！？…—,.!?\-~··]+$')
-RE_REPEAT_CHAR = re.compile(r'(.)\1{5,}')
-RE_CTRL = re.compile(r'[\x00-\x1f]')
-RE_SLASH_SLASH = re.compile(r'//')
-RE_SPECIAL_SYMBOLS = re.compile(r"[★☆●◆■□▲▼※◎○◇]")
+allowed_chars = re.compile(r'^[\u4e00-\u9fff0-9，。！？：；、“”‘’—…（）《》\s]+$')
+two_or_more_question = re.compile(r'\?{2,}|？{2,}')
+special_symbols = re.compile(r'[【*\[]')
+full_bracket_pattern = re.compile(r'^[（(].*[)）]')
 
-# 新增广告句型正则
-RE_ADS = re.compile(
-    r'(百度搜索.*|白金小说网.*|随梦小说网.*|新世纪小说网.*|无错小说网.*|看小说最快更新.*|给力文学网.*)',
-    re.I
-)
+# 括号内匹配正则
+bracket_inner_pattern = re.compile(r'[（(]([^）)]*)[)）]')
 
-ZERO_WIDTH = ''.join(['\u200b', '\u200c', '\u200d', '\u200e', '\u200f', '\ufeff'])
-RE_ZERO_WIDTH = re.compile('[%s]' % re.escape(ZERO_WIDTH))
+# ---------- 构建 Aho-Corasick 自动机 ----------
+def build_ac_automaton(words):
+    A = ahocorasick.Automaton()
+    for idx, word in enumerate(words):
+        A.add_word(word, (idx, word))
+    A.make_automaton()
+    return A
 
-# ---------- 工具函数 ----------
-def normalize_text(s: str) -> str:
-    if not s:
-        return ""
-    s = unicodedata.normalize('NFKC', s)
-    s = RE_ZERO_WIDTH.sub('', s)
-    s = re.sub(r'\s+', ' ', s).strip()
-    return s
+DIRTY_AC = build_ac_automaton(DIRTY_KEYWORDS)
+BRACKET_AC = build_ac_automaton(BRACKET_KEYWORDS)
 
-def brand_noise_hit(s_norm_lower: str) -> bool:
-    for b in SITE_BRANDS:
-        if b.lower() in s_norm_lower:
-            return True
-    letters_digits = re.sub(r'[^a-z0-9]+', '', s_norm_lower)
-    if any(tld in letters_digits for tld in ["com", "cn", "org", "net"]):
-        if "www" in letters_digits:
-            return True
+# ---------- 核心检查 ----------
+def contains_dirty_ac(text, automaton):
+    for _, _ in automaton.iter(text):
+        return True
     return False
 
-def is_valid(text: str, max_len: int, counters: Counter):
-    if not text or text.strip() == "":
-        counters["empty"] += 1
-        return False, "empty"
-    if len(text) > max_len:
-        counters["too_long"] += 1
-        return False, "too_long"
-    if text.isdigit():
-        counters["digit_only"] += 1
-        return False, "digit_only"
-
-    norm = normalize_text(text)
-    lower = norm.lower()
-
-    if not RE_CHINESE.search(norm):
-        counters["no_chinese"] += 1
-        return False, "no_chinese"
-    if RE_HTML.search(norm):
-        counters["html"] += 1
-        return False, "html"
-    if RE_CTRL.search(norm) or "�" in norm:
-        counters["control_or_replacement"] += 1
-        return False, "control_or_replacement"
-    if RE_ALL_PUNCT.fullmatch(norm):
-        counters["all_punct"] += 1
-        return False, "all_punct"
-    if RE_REPEAT_CHAR.search(norm):
-        counters["repeat_char"] += 1
-        return False, "repeat_char"
-    if RE_URL.search(norm) or RE_EMAIL.search(norm) or RE_PHONE_QQ.search(norm):
-        counters["url_email_phone"] += 1
-        return False, "url_email_phone"
-    if RE_CHAPTER.match(norm):
-        counters["chapter"] += 1
-        return False, "chapter"
-    if RE_SLASH_SLASH.search(norm):
-        counters["slash_slash"] += 1
-        return False, "slash_slash"
-    if any(kw in norm for kw in NON_CONTENT_KEYWORDS):
-        counters["non_content_kw"] += 1
-        return False, "non_content_kw"
-    if RE_SPECIAL_SYMBOLS.search(norm):
-        counters["special_symbols"] += 1
-        return False, "special_symbols"
-    if brand_noise_hit(lower):
-        counters["brand_noise"] += 1
-        return False, "brand_noise"
-    if RE_ADS.search(norm):
-        counters["ads"] += 1
-        return False, "ads"
-
-    return True, None
+def is_line_valid(text: str) -> bool:
+    if contains_dirty_ac(text, DIRTY_AC):
+        return False
+    if not allowed_chars.match(text):
+        return False
+    if two_or_more_question.search(text):
+        return False
+    if special_symbols.search(text):
+        return False
+    if full_bracket_pattern.match(text):
+        return False
+    # 括号内脏关键词
+    tmp = text
+    while match := bracket_inner_pattern.search(tmp):
+        if contains_dirty_ac(match.group(1), BRACKET_AC):
+            return False
+        tmp = tmp[match.end():]
+    return True
 
 # ---------- 清洗核心 ----------
 def run():
     total = kept = dropped = 0
-    counters = Counter()
-    seen_hashes = set()
-
-    # 尝试加载之前的哈希集合
-    if os.path.exists(SEEN_FILE):
-        with open(SEEN_FILE, "r") as f:
-            for line in f:
-                line = line.strip()
-                if line:
-                    seen_hashes.add(int(line))
-        print(f"[INFO] Loaded {len(seen_hashes)} hashes from {SEEN_FILE}")
-
     with open(INPUT_FILE, "r", encoding="utf-8", errors="ignore") as fin, \
-         open(OUTPUT_FILE, "a", encoding="utf-8") as fout, \
-         open(SEEN_FILE, "a") as fseen:
-
-        for line_no, line in enumerate(fin, 1):
-            if line_no < START_LINE:
-                continue  # 跳过已清洗过的行
-
+         open(OUTPUT_FILE, "w", encoding="utf-8") as fout:
+        for line in fin:
             total += 1
             parts = line.rstrip("\n").split("\t")
-            if len(parts) <= 2:
-                counters["short_cols"] += 1
+            if len(parts) < 3:
                 dropped += 1
                 continue
-
-            text = parts[2]
-            norm = normalize_text(text)
-            text_hash = hash(norm)
-
-            if text_hash in seen_hashes:
-                counters["duplicate"] += 1
+            col3 = parts[2]
+            if not is_line_valid(col3):
                 dropped += 1
                 continue
-            seen_hashes.add(text_hash)
-            fseen.write(f"{text_hash}\n")  # 实时追加到哈希文件
-
-            keep, reason = is_valid(text, DEFAULT_MAX_LEN, counters)
-            if not keep:
-                dropped += 1
-                continue
-
-            fout.write(line)  # 保留原始行，已包含 \n
+            fout.write(line)  # 保留原始行
             kept += 1
-
-            if kept % 100000 == 0:
-                print(f"[progress] kept={kept} / processed={total} / line={line_no}")
-
-    print("\n=== Done ===")
-    print(f"完成 ✅ 总行数: {total}, 保留: {kept}, 删除: {dropped}")
-    print("Drop reasons 统计：")
-    for k, v in counters.most_common():
-        if v:
-            print(f"  - {k}: {v}")
+            if total % PROGRESS_INTERVAL == 0:
+                print(f"[seen] {total:,}  [kept] {kept:,}")
+    print(f"Done ✅ 总行数: {total:,}, 保留: {kept:,}, 删除: {dropped:,}")
+    print(f"输出文件: {OUTPUT_FILE}")
 
 if __name__ == "__main__":
     run()

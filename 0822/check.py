@@ -3,7 +3,7 @@ import re
 from collections import Counter
 import unicodedata
 
-INPUT_FILE = "/data1/to_hongyao/data_clean.zh"
+INPUT_FILE = "/home/maohongyao/pro/code/clean/data_clean.zh"
 COL_IDX = 2  # 第三列
 
 AD_KEYWORDS = [
