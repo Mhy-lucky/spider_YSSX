@@ -26,37 +26,23 @@ ___
 
 5.反爬总结
 * ①安全验证无法跳过，也无法解决（小牛翻译）
-* ②翻译请求由前端JS监听输入事件触发，模拟点击输入内容无法触发翻译（Slate.js 编辑器）（火山翻译）
+* ②翻译请求由前端JS监听输入事件触发，模拟点击输入内容无法触发翻译（Slate.js 编辑器）（火山翻译/腾讯翻译君）
 * ③本地可跑，服务器上刷新一下就会导致timeout(google翻译)
 
 
 
 
 ## 二、📝 爬虫需求模板（Page Object 模式）
-请尽量完整填写，越详细越准确：
-网站基本信息
-网站 URL：
-登录/权限要求（有/无，是否需要账号密码）：
-是否有验证码 / 安全验证（图形/滑块/其他）：
-目标数据
-需要爬取的主要信息类型（文本 / 图片 /文件 / 下拉选项 等）：
-具体字段（如标题、内容、作者、发布时间 等）：
-需要保存的格式（CSV / Excel / JSON / 数据库）：
-目标页面结构
-页面是静态还是动态渲染（AJAX/JS）：
-是否存在分页 / 滚动加载 / 下拉刷新：
-是否需要翻页 / 无限滚动：
-操作需求
-是否需要模拟点击按钮 / 下拉菜单 / 选择选项：
-是否需要输入文本（搜索框 / 登录 / 筛选）：
-是否需要循环操作（比如循环选择多个下拉项或翻页）：
-元素定位信息
-是否能提供主要元素的 ID / class / CSS / XPath：
-对于复杂页面，是否希望采用父子元素定位：
-需要显式等待的元素（可见 / 可点击 / 已存在）：
-其他要求
-是否要求 无头模式（Headless）运行：
-是否需要日志 / 异常处理 / 重试机制：
-是否有特殊操作（如下载文件、截图、验证码人工提示）：
+帮我写一个脚本，模拟点击https://fanyi.qq.com/，
+选择源语言和目标语言，点击语言选择框<div class="tea-dropdown__header tea-dropdown-default"><div class="tea-dropdown__value">英语</div><i class="tea-icon tea-icon-arrowdown" role="img" aria-label="arrowdown"></i></div>；
+然后选择语言，各语言结构<ul class="tea-list"><li class="">英语</li><li class="">繁体中文</li><li class="">法语</li><li class="">德语</li><li class="">俄语</li><li class="">土耳其语</li><li class="">西班牙语</li><li class="">日语</li><li class="">韩语</li><li class="">越南语</li><li class="">印尼语</li><li class="">马来西亚语</li></ul>；
+然后输入需要翻译的内容，输入框结构<div class="tea-textarea-group" style="width: 100%;"><textarea placeholder="输入文本内容" class="tea-textarea font-size-22 size-full-width" maxlength="2000" style="height: 99px;">今天天气很好
+我喜欢
+希望明天天气也好</textarea><label class="tea-textarea__label">19 / 2000</label></div>；
+提取翻译内容，翻译框结构<div class="target-text-box not-show" style="height: 99px;"><div class="target-text-list">today the weather is very good</div><div class="target-text-list">I like</div><div class="target-text-list">I hope the weather will be fine tomorrow</div></div>；
+然后把原文本和翻译文本按照def append_to_file(pairs):
+    with open(OUTPUT_FILE, "a", encoding="utf-8") as f:
+        for original, translated in pairs:
+            f.write(f"{original}\t{translated}\n")这种格式保存  一条一行
 
 ___

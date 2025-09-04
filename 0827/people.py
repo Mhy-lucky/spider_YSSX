@@ -3,22 +3,11 @@ import time
 import json
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 import nltk
 
 # 确保 punkt 分词器
-# nltk.download('punkt')
-import nltk
-
-# 指定 NLTK 数据目录
-NLTK_DATA_DIR = '/home/maohongyao/nltk_data'
-nltk.data.path.append(NLTK_DATA_DIR)
-
-# 下载需要的资源（非交互模式）
-nltk.download('punkt', download_dir=NLTK_DATA_DIR)
-nltk.download('punkt_tab', download_dir=NLTK_DATA_DIR)
-
+nltk.download('punkt')
 
 # ---------------- 配置 ----------------
 URLS = [
@@ -39,27 +28,20 @@ URLS = [
     "http://en.people.cn/90786/",
     "http://en.people.cn/90782/207872/",
     "http://english.people.com.cn/518252/",
-    "http://en.people.cn/102775/"
+    "http://en.people.cn/102775/"#
 ]
 
-OUTPUT_FILE = "/home/maohongyao/pro/code/people/articles.txt"
-PROGRESS_FILE = "/home/maohongyao/pro/code/people/progress.json"
+OUTPUT_FILE = "articles_clean.txt"
+PROGRESS_FILE = "progress.json"
 SLEEP_TIME = 2
 
 # ---------------- 浏览器配置 ----------------
-options = Options()
-options.binary_location = "/home/maohongyao/chrome/opt/google/chrome/chrome" 
-options.add_argument("--headless=new")
-options.add_argument("--window-size=1920,1080")
-options.add_argument("--disable-gpu")
-options.add_argument("--no-sandbox")
-options.add_argument("--disable-dev-shm-usage")
-options.add_argument("--disable-features=VizDisplayCompositor")
-options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36")
-options.add_experimental_option("excludeSwitches", ["enable-automation"])
-options.add_experimental_option("useAutomationExtension", False)
-service = Service("/home/maohongyao/chrome/chromedriver-linux64/chromedriver")
-driver = webdriver.Chrome(service=service, options=options)
+chrome_options = Options()
+chrome_options.add_argument("--headless")
+chrome_options.add_argument("--disable-gpu")
+chrome_options.add_argument("--no-sandbox")
+chrome_options.add_argument("--disable-dev-shm-usage")
+driver = webdriver.Chrome(options=chrome_options)
 
 # ---------------- 工具函数 ----------------
 def load_progress():
@@ -78,8 +60,8 @@ def get_article_links(channel_url):
     driver.get(channel_url)
     time.sleep(SLEEP_TIME)
 
-    if "518252" in channel_url:
-        elems = driver.find_elements(By.XPATH, "//div[@id='tiles']/li/p/a")
+    if "518252" in channel_url or "102840" in channel_url:
+        elems = driver.find_elements(By.XPATH, "//ul[@id='tiles']/li/a | //ul[@id='tiles']/li/p/a")
     elif "102775" in channel_url:
         elems = driver.find_elements(By.XPATH, "//ul[@class='foreign_list7 cf']/li/a")
     else:
@@ -95,7 +77,15 @@ def extract_sentences(article_url):
     time.sleep(SLEEP_TIME)
 
     paras = driver.find_elements(By.XPATH, "//div[@class='w860 d2txtCon cf']/p")
-    texts = [p.text.strip() for p in paras if p.text.strip()]
+    texts = []
+    for p in paras:
+        txt = p.text.strip()
+        if not txt:
+            continue
+        align_attr = p.get_attribute("align") or p.get_attribute("style") or ""
+        if "center" in align_attr.lower():
+            continue
+        texts.append(txt)
 
     sentences = []
     for para in texts:
