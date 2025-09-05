@@ -3,9 +3,9 @@ import json
 import os
 from playwright.async_api import async_playwright
 
-CHANNEL_FILE = "/Users/admin/Desktop/coding/0904/channels.json"
+CHANNEL_FILE = "/Users/admin/Desktop/coding/0904/failed.txt"
 ARTICLES_FILE = "/Users/admin/Desktop/coding/0904/articles.txt"
-FAILED_FILE = "/Users/admin/Desktop/coding/0904/failed.txt"
+FAILED_FILE = "/Users/admin/Desktop/coding/0904/failed_1.txt"
 PROGRESS_FILE = "/Users/admin/Desktop/coding/0904/progress.txt"
 MORE_RETRY = 3  # 点击 More 失败时重试次数
 WAIT_AFTER_CLICK = 2000  # 点击 More 后等待时间（毫秒）
@@ -29,12 +29,16 @@ async def crawl_channel(page, url, articles_out):
                         href = "https://english.news.cn" + href
                     if href not in article_urls:
                         article_urls.add(href)
-                        articles_out.write(href + "\n")
                         new_links += 1
             except:
                 pass
 
-        articles_out.flush()
+        # 只写入新增文章
+        if new_links > 0:
+            for link in list(article_urls)[-new_links:]:
+                articles_out.write(link + "\n")
+            articles_out.flush()
+
         print(f"📝 {new_links} new articles found on this page of {url}")
 
         # 点击 More 并重试
@@ -53,8 +57,9 @@ async def crawl_channel(page, url, articles_out):
                 print(f"⚠️ 点击 More 失败，重试 {attempt + 1}/{MORE_RETRY}: {e}")
                 await page.wait_for_timeout(1000)
 
-        if not success:
-            print("❌ 点击 More 超过重试次数，停止翻页")
+        # 点击 More 后如果没有新文章，则跳到下一个频道
+        if not success or new_links == 0:
+            print(f"🛑 点击 More 后没有新文章，停止 {url}")
             break
 
     return list(article_urls)
@@ -68,10 +73,9 @@ async def main():
     else:
         progress = {"done": [], "failed": []}
 
-    # 读取频道列表
+        # 读取频道列表
     with open(CHANNEL_FILE, "r", encoding="utf-8") as f:
-        data = json.load(f)
-        channels = data.get("channels") if isinstance(data, dict) else data
+        channels = [line.strip() for line in f if line.strip()]
 
     articles_out = open(ARTICLES_FILE, "a", encoding="utf-8")
     failed_out = open(FAILED_FILE, "a", encoding="utf-8")

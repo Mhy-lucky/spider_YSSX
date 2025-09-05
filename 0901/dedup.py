@@ -9,7 +9,7 @@ def remove_duplicate_lines(input_file, output_file):
                 outfile.write(line)
 
 if __name__ == "__main__":
-    input_path = "/Users/admin/Desktop/coding/0901/articles_clean.txt"   # 输入文件
+    input_path = "/Users/admin/Desktop/coding/0904/urls.txt"   # 输入文件
     output_path = "output.txt" # 去重后的输出文件
     remove_duplicate_lines(input_path, output_path)
     print(f"去重完成！结果已保存到 {output_path}")
