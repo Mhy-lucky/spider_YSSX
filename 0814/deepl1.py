@@ -25,37 +25,7 @@ PROCESSED_FILE = "processed_lines.txt"
 # ---------------- 语言缩写映射表 ----------------
 LANGUAGE_MAP = {
     'en': 'en-US', 
-    'zh': 'zh-Hans', 
-    'ja': 'ja', 
-    'fr': 'fr', 
-    'de': 'de', 
-    'es': 'es', 
-    'it': 'it', 
-    'ru': 'ru', 
-    'pt': 'pt', 
-    'nl': 'nl', 
-    'pl': 'pl', 
-    'tr': 'tr', 
-    'ko': 'ko', 
-    'ar': 'ar', 
-    'sv': 'sv', 
-    'da': 'da', 
-    'fi': 'fi', 
-    'no': 'no', 
-    'cs': 'cs', 
-    'el': 'el', 
-    'ro': 'ro', 
-    'hu': 'hu', 
-    'sk': 'sk', 
-    'bg': 'bg', 
-    'uk': 'uk', 
-    'hr': 'hr', 
-    'sl': 'sl', 
-    'et': 'et', 
-    'lt': 'lt', 
-    'lv': 'lv', 
-    'is': 'is', 
-    'mt': 'mt'
+    'zh': 'zh-Hans'
 }
 
 # ---------------- 浏览器初始化 ----------------
@@ -63,7 +33,7 @@ def init_driver():
     driver = None
     try:
         chrome_options = Options()
-        chrome_options.add_argument('--headless')  # 可根据需求选择启用或禁用 headless 模式
+        # chrome_options.add_argument('--headless')  # 可根据需求选择启用或禁用 headless 模式
         chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-blink-features=AutomationControlled")
@@ -83,8 +53,9 @@ def init_driver():
             )
             close_button_svg.click()  # 点击关闭按钮
             print("🎯 已关闭 Introducing DeepL AI Labs 弹窗")
-        except TimeoutException:
-            print("❌ 未找到 Introducing DeepL AI Labs 弹窗，跳过关闭操作")
+        except TimeoutException as e:
+            print(f"❌ 关闭 Introducing DeepL AI Labs 弹窗失败: {e}")
+            traceback.print_exc()
 
         # ---------------- 关闭 Cookie 横幅 ----------------
         try:
@@ -93,13 +64,13 @@ def init_driver():
             )
             cookie_button.click()  # 点击关闭 Cookie 横幅
             print("🎯 已关闭 Cookie 横幅")
-        except TimeoutException:
-            print("❌ 未找到 Cookie 横幅，跳过关闭操作")
+        except TimeoutException as e:
+            print(f"❌ 关闭 Cookie 横幅失败: {e}")
+            traceback.print_exc()
 
         # ---------------- 选择目标语言 ----------------
         select_target_language(driver)
 
-        # 返回初始化的 driver
         return driver
 
     except WebDriverException as e:
@@ -107,22 +78,26 @@ def init_driver():
         traceback.print_exc()
         if driver:
             try: driver.quit()
-            except: pass
+            except Exception as inner_e:
+                print(f"❌ 关闭浏览器失败: {inner_e}")
+                traceback.print_exc()
         raise
     except Exception as e:
-        print(f"❌ 未知浏览器异常: {e}")
+        print(f"❌ 未知浏览器初始化异常: {e}")
         traceback.print_exc()
         if driver:
             try: driver.quit()
-            except: pass
+            except Exception as inner_e:
+                print(f"❌ 关闭浏览器失败: {inner_e}")
+                traceback.print_exc()
         raise
 
 # ---------------- 选择目标语言 ----------------
 def select_target_language(driver):
-    tgt_lang = args.target_lang  # 从命令行参数中获取目标语言
-    full_lang = LANGUAGE_MAP.get(tgt_lang, tgt_lang)  # 使用映射表获取完整语言代码
-
     try:
+        tgt_lang = args.target_lang  # 从命令行参数中获取目标语言
+        full_lang = LANGUAGE_MAP.get(tgt_lang, tgt_lang)  # 使用映射表获取完整语言代码
+
         # 等待目标语言下拉按钮可点击
         lang_btn = WebDriverWait(driver, 20).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, "button[data-testid='translator-target-lang-btn']"))
@@ -140,42 +115,55 @@ def select_target_language(driver):
         driver.execute_script("arguments[0].click();", lang_option)
 
         print(f"🎯 已选择目标语言：{full_lang}")
-
     except Exception as e:
         print(f"❌ 选择目标语言失败: {e}")
+        traceback.print_exc()
+        raise
 
 # ---------------- 输入与获取翻译 ----------------
 def set_source_text(driver, text, timeout=15):
-    input_div = WebDriverWait(driver, timeout).until(
-        lambda d: d.find_element(By.CSS_SELECTOR,
-            'd-textarea[data-testid="translator-source-input"] div[contenteditable="true"]')
-    )
-    driver.execute_script("""
-        let div = arguments[0];
-        div.focus();
-        div.innerText = '';
-        div.dispatchEvent(new Event('input', { bubbles: true }));
-        div.innerText = arguments[1];
-        div.dispatchEvent(new Event('input', { bubbles: true }));
-    """, input_div, text)
+    try:
+        input_div = WebDriverWait(driver, timeout).until(
+            lambda d: d.find_element(By.CSS_SELECTOR,
+                'd-textarea[data-testid="translator-source-input"] div[contenteditable="true"]')
+        )
+        driver.execute_script("""
+            let div = arguments[0];
+            div.focus();
+            div.innerText = '';
+            div.dispatchEvent(new Event('input', { bubbles: true }));
+            div.innerText = arguments[1];
+            div.dispatchEvent(new Event('input', { bubbles: true }));
+        """, input_div, text)
+    except Exception as e:
+        print(f"❌ 设置输入文本失败: {e}")
+        traceback.print_exc()
+        raise
 
 def get_translated_text(driver, timeout=60):
-    timeout = float(timeout)  # 强制转换 timeout 为 float 类型
-    prev_text = ""
-    end_time = time.time() + timeout
-    while time.time() < end_time:
-        try:
-            output_div = driver.find_element(By.CSS_SELECTOR,
-                'd-textarea[data-testid="translator-target-input"] div[contenteditable="true"]')
-            ps = output_div.find_elements(By.TAG_NAME, "p")
-            text = "\n".join([p.text for p in ps if p.text])
-            if text and text == prev_text:
-                return text
-            prev_text = text
-        except:
-            pass
-        time.sleep(0.5)
-    return "无法获取翻译结果"
+    try:
+        timeout = float(timeout)  # 强制转换 timeout 为 float 类型
+        prev_text = ""
+        end_time = time.time() + timeout
+        while time.time() < end_time:
+            try:
+                output_div = driver.find_element(By.CSS_SELECTOR,
+                    'd-textarea[data-testid="translator-target-input"] div[contenteditable="true"]')
+                ps = output_div.find_elements(By.TAG_NAME, "p")
+                text = "\n".join([p.text for p in ps if p.text])
+                if text and text == prev_text:
+                    return text
+                prev_text = text
+            except Exception as e:
+                print(f"❌ 获取翻译文本失败: {e}")
+                traceback.print_exc()
+                raise
+            time.sleep(0.5)
+        return "无法获取翻译结果"
+    except Exception as e:
+        print(f"❌ 获取翻译结果失败: {e}")
+        traceback.print_exc()
+        raise
 
 # ---------------- 监测与重启服务器 ----------------
 def restart_driver_if_needed(driver):
@@ -190,18 +178,27 @@ def restart_driver_if_needed(driver):
     except Exception as e:
         print(f"❌ 检测浏览器状态失败，准备重启：{e}")
         traceback.print_exc()
-        driver.quit()
+        try:
+            driver.quit()
+        except Exception as inner_e:
+            print(f"❌ 关闭浏览器失败: {inner_e}")
+            traceback.print_exc()
         return init_driver()
 
 # ---------------- 保存函数 ----------------
 def append_to_file(original, translated):
-    orig_lines = original.strip().split("\n")
-    trans_lines = translated.strip().split("\n")
-    min_len = min(len(orig_lines), len(trans_lines))
+    try:
+        orig_lines = original.strip().split("\n")
+        trans_lines = translated.strip().split("\n")
+        min_len = min(len(orig_lines), len(trans_lines))
 
-    with open(args.output_file, "a", encoding="utf-8") as f:
-        for i in range(min_len):
-            f.write(orig_lines[i].strip() + "\t" + trans_lines[i].strip() + "\n")
+        with open(args.output_file, "a", encoding="utf-8") as f:
+            for i in range(min_len):
+                f.write(orig_lines[i].strip() + "\t" + trans_lines[i].strip() + "\n")
+    except Exception as e:
+        print(f"❌ 保存翻译结果到文件失败: {e}")
+        traceback.print_exc()
+        raise
 
 # ---------------- 翻译前清空输出 ----------------
 def clear_output(driver):
@@ -209,26 +206,34 @@ def clear_output(driver):
         output_div = driver.find_element(By.CSS_SELECTOR,
             'd-textarea[data-testid="translator-target-input"] div[contenteditable="true"]')
         driver.execute_script("arguments[0].innerText='';", output_div)
-    except:
-        pass
+    except NoSuchElementException as e:
+        print(f"❌ 未找到输出区域: {e}")
+    except Exception as e:
+        print(f"❌ 清空输出区域失败: {e}")
+        traceback.print_exc()
 
 # ---------------- 段落拆分（单段落超长，按字符数，保持单词完整） ----------------
 def split_long_paragraph_by_chars(paragraph, max_chars):
-    words = paragraph.split(" ")
-    chunks, current, length = [], [], 0
+    try:
+        words = paragraph.split(" ")
+        chunks, current, length = [], [], 0
 
-    for w in words:
-        if length + len(w) + (1 if current else 0) <= max_chars:
-            current.append(w)
-            length += len(w) + (1 if current else 0)
-        else:
+        for w in words:
+            if length + len(w) + (1 if current else 0) <= max_chars:
+                current.append(w)
+                length += len(w) + (1 if current else 0)
+            else:
+                chunks.append(" ".join(current))
+                current = [w]
+                length = len(w)
+        if current:
             chunks.append(" ".join(current))
-            current = [w]
-            length = len(w)
-    if current:
-        chunks.append(" ".join(current))
 
-    return chunks
+        return chunks
+    except Exception as e:
+        print(f"❌ 拆分段落失败: {e}")
+        traceback.print_exc()
+        raise
 
 # ---------------- 记录已处理的行 ----------------
 def load_processed_lines(processed_file):
@@ -238,17 +243,18 @@ def load_processed_lines(processed_file):
                 return set(f.read().splitlines())
         return set()
     except Exception as e:
-        print(f"❌ 读取已处理文件异常: {e}")
+        print(f"❌ 读取已处理文件失败: {e}")
         traceback.print_exc()
-        return set()
+        raise
 
 def save_processed_lines(processed_lines, processed_file):
     try:
         with open(processed_file, "w", encoding="utf-8") as f:
             f.write("\n".join(processed_lines))
     except Exception as e:
-        print(f"❌ 保存已处理文件异常: {e}")
+        print(f"❌ 保存已处理文件失败: {e}")
         traceback.print_exc()
+        raise
 
 # ---------------- 主程序 ----------------
 if __name__ == "__main__":
@@ -286,7 +292,7 @@ if __name__ == "__main__":
                 with open(args.input_file, "r", encoding="utf-8") as f:
                     lines = [line.strip() for line in f if line.strip()]
             except Exception as e:
-                print(f"❌ 读取输入文件异常: {e}")
+                print(f"❌ 读取输入文件失败: {e}")
                 traceback.print_exc()
                 time.sleep(CHECK_INTERVAL)
                 continue

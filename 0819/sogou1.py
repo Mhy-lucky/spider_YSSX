@@ -33,6 +33,41 @@ class SogouTranslatePage:
         self.driver.get("https://fanyi.sogou.com/")
         print("✅ 页面加载完成")
 
+    def select_source_language(self, lang_code):
+        try:
+            sl_selector = self.wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ".sl-selector .text")))
+            sl_selector.click()
+            time.sleep(0.5)
+
+            first_letter = lang_code[0].upper()
+            try:
+                letter_span = self.wait.until(EC.element_to_be_clickable(
+                    (By.CSS_SELECTOR, f".letter.langSelectList-char#{first_letter}")
+                ))
+                letter_span.click()
+                time.sleep(0.2)
+            except (NoSuchElementException, ElementNotInteractableException) as e:
+                print(f"❌ 错误：无法找到首字母索引或元素不可交互，异常：{e}")
+                traceback.print_exc()
+                raise
+
+            lang_span = self.wait.until(EC.element_to_be_clickable(
+                (By.CSS_SELECTOR, f".langs span[lang='{lang_code}']")
+            ))
+            lang_span.click()
+
+            if lang_code.lower() == "zh-chs":
+                time.sleep(1.5)
+                self.driver.execute_script("document.body.click();")
+            else:
+                time.sleep(0.5)
+            print(f"🎯 源语言 {lang_code} 已选择")
+
+        except (NoSuchElementException, TimeoutException, ElementNotInteractableException) as e:
+            print(f"❌ 选择源语言失败: {e}")
+            traceback.print_exc()
+            raise
+
     def select_target_language(self, lang_code):
         try:
             tl_selector = self.wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ".tl-selector .text")))
@@ -62,6 +97,7 @@ class SogouTranslatePage:
             else:
                 time.sleep(0.5)
             print(f"🎯 目标语言 {lang_code} 已选择")
+
         except (NoSuchElementException, TimeoutException, ElementNotInteractableException) as e:
             print(f"❌ 选择目标语言失败: {e}")
             traceback.print_exc()
@@ -240,13 +276,17 @@ def main():
     parser = argparse.ArgumentParser(description="Sogou Translate Automation Script")
     parser.add_argument("input_file", help="输入文件路径")
     parser.add_argument("output_file", help="输出文件路径")
-    parser.add_argument("target_lang", help="目标语言缩写（如 fr, de, ja, zh-CHS）")
+    parser.add_argument("source_lang", help="源语言缩写（如 en, zh, ja 等）")
+    parser.add_argument("target_lang", help="目标语言缩写（如 fr, de, ja, zh-CHS 等）")
     args = parser.parse_args()
 
     chromedriver_autoinstaller.install()
 
     driver = init_driver()
     page = SogouTranslatePage(driver)
+    
+    # 设置源语言和目标语言
+    page.select_source_language(LANGUAGE_MAP.get(args.source_lang, args.source_lang))
     page.select_target_language(LANGUAGE_MAP.get(args.target_lang, args.target_lang))
 
     print("🟢 程序启动，开始监控文件并翻译...")

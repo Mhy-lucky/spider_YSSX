@@ -50,6 +50,7 @@ PROCESSED_FILE = "processed_lines.txt"
 def init_driver():
     driver = None
     try:
+        print("正在初始化浏览器...")
         options = Options()
         options.add_argument('--headless')  # 可根据需求选择启用或禁用 headless 模式
         options.add_argument("--headless=new")
@@ -66,6 +67,7 @@ def init_driver():
         driver.get("https://fanyi.youdao.com/#/TextTranslate")
         driver.execute_script("window.scrollBy(0, window.innerHeight/2);")
         time.sleep(random.uniform(1, 2))
+        print("浏览器初始化完成。")
     except WebDriverException as e:
         print(f"❌ 浏览器初始化异常: {e}")
         traceback.print_exc()
@@ -85,15 +87,20 @@ def init_driver():
 # ---------------- 选择语言 ----------------
 def select_language(driver, src_lang, tgt_lang):
     try:
+        print(f"正在选择源语言：{src_lang} 和目标语言：{tgt_lang}")
         wait = WebDriverWait(driver, 20)
         src_code = LANG_MAP.get(src_lang.lower(), src_lang.lower())
         tgt_code = LANG_MAP.get(tgt_lang.lower(), tgt_lang.lower())
 
+        print(f"选择源语言代码：{src_code}，目标语言代码：{tgt_code}")
+
+        # 选择源语言
         src_selector = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ".lang-container.lanFrom-container .lang-text-ai")))
         src_selector.click()
         src_option = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, f'div.language-item[data-code="{src_code}"]')))
         src_option.click()
 
+        # 选择目标语言
         tgt_selector = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ".lang-container.lanTo-container .lang-text-ai")))
         tgt_selector.click()
         tgt_option = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, f'div.language-item[data-code="{tgt_code}"]')))
@@ -112,6 +119,7 @@ def select_language(driver, src_lang, tgt_lang):
 # ---------------- 输入与获取翻译 ----------------
 def translate_text(driver, text):
     try:
+        print(f"正在翻译的文本: {text}")  # 打印将要翻译的文本
         wait = WebDriverWait(driver, 20)
         input_box = wait.until(EC.visibility_of_element_located((By.ID, "js_fanyi_input")))
         input_box.clear()
@@ -130,6 +138,8 @@ def translate_text(driver, text):
                 print(f"❌ 某行提取翻译异常: {e_inner}")
                 traceback.print_exc()
                 lines_translated.append("")
+        
+        print(f"翻译结果: {lines_translated}")  # 打印翻译后的结果
         return lines_translated
     except (TimeoutException, NoSuchElementException, ElementNotInteractableException, StaleElementReferenceException) as e:
         print(f"❌ 翻译异常: {e}")
@@ -143,9 +153,12 @@ def translate_text(driver, text):
 # ---------------- 保存结果 ----------------
 def append_to_file(pairs, output_file):
     try:
+        print(f"正在写入文件 {output_file}...")
         with open(output_file, "a", encoding="utf-8") as f:
             for original, translated in pairs:
+                print(f"写入: {original} -> {translated}")  # 打印每行写入内容
                 f.write(f"{original}\t{translated}\n")
+        print("写入完成。")
     except (OSError, IOError) as e:
         print(f"❌ 写入文件异常: {e}")
         traceback.print_exc()
@@ -156,9 +169,12 @@ def append_to_file(pairs, output_file):
 # ---------------- 记录已处理的行 ----------------
 def load_processed_lines(processed_file):
     try:
+        print(f"加载已处理的行 {processed_file}...")
         if os.path.exists(processed_file):
             with open(processed_file, "r", encoding="utf-8") as f:
-                return set(f.read().splitlines())
+                processed_lines = set(f.read().splitlines())
+                print(f"已处理的行数: {len(processed_lines)}")
+                return processed_lines
         return set()
     except Exception as e:
         print(f"❌ 读取已处理文件异常: {e}")
@@ -167,8 +183,10 @@ def load_processed_lines(processed_file):
 
 def save_processed_lines(processed_lines, processed_file):
     try:
+        print(f"保存已处理的行 {processed_file}...")
         with open(processed_file, "w", encoding="utf-8") as f:
             f.write("\n".join(processed_lines))
+        print(f"已处理行数保存成功: {len(processed_lines)}")
     except Exception as e:
         print(f"❌ 保存已处理文件异常: {e}")
         traceback.print_exc()
@@ -192,6 +210,7 @@ if __name__ == "__main__":
 
     while True:
         try:
+            print("正在检查输入文件...")
             # 初始化浏览器
             if not driver:
                 try:
@@ -204,19 +223,15 @@ if __name__ == "__main__":
 
             # 检查输入文件
             if not os.path.exists(INPUT_FILE):
+                print(f"❌ 输入文件 {INPUT_FILE} 不存在，等待中...")
                 time.sleep(CHECK_INTERVAL)
                 continue
 
-            try:
-                with open(INPUT_FILE, "r", encoding="utf-8") as f:
-                    lines = [line.strip() for line in f if line.strip()]
-            except Exception as e:
-                print(f"❌ 读取输入文件异常: {e}")
-                traceback.print_exc()
-                time.sleep(CHECK_INTERVAL)
-                continue
+            with open(INPUT_FILE, "r", encoding="utf-8") as f:
+                lines = [line.strip() for line in f if line.strip()]
+            print(f"读取到 {len(lines)} 行待翻译的内容。")
 
-
+            # 处理新的内容
             new_lines = [line for line in lines if line not in processed_lines]
             if not new_lines:
                 if not no_new_content_logged:
@@ -227,6 +242,7 @@ if __name__ == "__main__":
             else:
                 no_new_content_logged = False
 
+            print(f"将翻译 {len(new_lines)} 行新的内容。")
             batch, batch_len = [], 0
             for line in new_lines:
                 chunks = [line] if len(line) <= MAX_CHARS else [line[i:i+MAX_CHARS] for i in range(0, len(line), MAX_CHARS)]
@@ -234,12 +250,12 @@ if __name__ == "__main__":
                     if batch_len + len(chunk) > MAX_CHARS:
                         try:
                             translated_lines = translate_text(driver, "\n".join(batch))
-                            if translated_lines and len(translated_lines) == len(batch):
+                            if translated_lines:
                                 append_to_file(list(zip(batch, translated_lines)), OUTPUT_FILE)
                                 processed_lines.update(batch)
                                 save_processed_lines(processed_lines, PROCESSED_FILE)
                             else:
-                                print(f"⚠️ 本批次行数不匹配，丢弃 {len(batch)} 行内容")
+                                print(f"❌ 本批次翻译失败，丢弃 {len(batch)} 行内容")
                         except Exception as e:
                             print(f"❌ 本批次翻译失败: {e}")
                             traceback.print_exc()
@@ -256,12 +272,12 @@ if __name__ == "__main__":
             if batch:
                 try:
                     translated_lines = translate_text(driver, "\n".join(batch))
-                    if translated_lines and len(translated_lines) == len(batch):
+                    if translated_lines:
                         append_to_file(list(zip(batch, translated_lines)), OUTPUT_FILE)
                         processed_lines.update(batch)
                         save_processed_lines(processed_lines, PROCESSED_FILE)
                     else:
-                        print(f"⚠️ 本批次行数不匹配，丢弃 {len(batch)} 行内容")
+                        print(f"❌ 本批次翻译失败，丢弃 {len(batch)} 行内容")
                 except Exception as e:
                     print(f"❌ 本批次翻译失败: {e}")
                     traceback.print_exc()
